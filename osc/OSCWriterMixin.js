@@ -1,4 +1,34 @@
 
+OSCWriter.TRACK_ATTRIBS = [
+    "exists", "activated", "selected", "name",
+    "volumeStr", "volume", "panStr", "pan", "color",
+    "vu", "mute", "solo", "recarm", "monitor", "autoMonitor",
+    "canHoldNotes", "sends", "slots", "crossfadeMode" ];
+
+OSCWriter.FXPARAM_ATTRIBS = [ "name", "valueStr", "value" ];
+OSCWriter.EMPTY_TRACK =
+{
+    exists: false,
+    activated: true,
+    selected: false,
+    name: '',
+    volumeStr: '',
+    volume: 0,
+    panStr: '',
+    pan: 0,
+    color: 0,
+    vu: 0,
+    mute: false,
+    solo: false,
+    recarm: false,
+    monitor: false,
+    autoMonitor: false,
+    canHoldNotes: false,
+    sends: [],
+    slots: [],
+    crossfadeMode: 'AB'
+};
+
 OSCWriter.prototype.flush = function (dump)
 {
     //println("OSCWriter.prototype.flush() Mixed");
@@ -48,6 +78,11 @@ OSCWriter.prototype.flushTransport = function (dump)
 OSCWriter.prototype.flushApplication = function (dump)
 {
     var app = this.model.getApplication ();
+    this.sendOSC ('/active', app.isEngineActive(), dump);
+
+    //----------------------------------
+    // original
+    //----------------------------------
     this.sendOSC ('/layout', app.getPanelLayout ().toLowerCase (), dump);
 };
 
@@ -82,6 +117,13 @@ OSCWriter.prototype.flushMasterTrack = function (dump)
 OSCWriter.prototype.flushTracks = function (dump)
 {
     var trackBank = this.model.getCurrentTrackBank ();
+
+    this.sendOSC('/track/canScrollTracksUp', trackBank.canScrollTracksUp(), dump);
+    this.sendOSC('/track/canScrollTracksDown', trackBank.canScrollTracksDown(), dump);
+
+    //----------------------------------
+    // original
+    //----------------------------------
     for (var i = 0; i < trackBank.numTracks; i++)
         this.flushTrack ('/track/' + (i + 1) + '/', trackBank.getTrack (i), dump);
 };
@@ -99,6 +141,38 @@ OSCWriter.prototype.flushDevice = function (dump)
 {
     var cd = this.model.getCursorDevice ();
     var selDevice = cd.getSelectedDevice ();
+
+    this.sendOSC('/device/expand', cd.isExpanded(), dump);
+    this.sendOSC('/device/window', cd.isWindowOpen(), dump);
+    this.sendOSC('/device/macroVisible', cd.isMacroSectionVisible(), dump);
+    this.sendOSC('/device/paramVisible', cd.isParameterPageSectionVisible(), dump);
+    this.sendOSC('/device/window', cd.isWindowOpen(), dump);
+
+    this.sendOSC('/device/canSelectPrevious', cd.canSelectPreviousFX(), dump);
+    this.sendOSC('/device/canSelectNext', cd.canSelectNextFX(), dump);
+    var name = cd.getSelectedParameterPageName();
+    if (name != null && name != "")
+        this.sendOSC('/device/param/selectedPageName', cd.getSelectedParameterPageName(), dump);
+
+    var pages = cd.getParameterPageNames();
+    var result = [];
+    if (pages != null)
+    {
+        for (var i = 0; i < pages.length; i++)
+        {
+            result[i] = pages[i];
+        }
+    }
+
+    this.sendOSC('/device/param/pageNames', result.length == 0 ? "" : result.join(','), dump);
+
+    var name = cd.getSelectedParameterPageName();
+    if (name != null && name != "")
+        this.sendOSC('/device/param/selectedPageName', cd.getSelectedParameterPageName(), dump);
+
+    //----------------------------------
+    // original
+    //----------------------------------
     this.sendOSC ('/device/name', selDevice.name, dump);
     this.sendOSC ('/device/bypass', !selDevice.enabled, dump);
     for (var i = 0; i < cd.numParams; i++)
@@ -191,6 +265,9 @@ OSCWriter.prototype.flushTrack = function (trackAddress, track, dump)
                 var color = AbstractTrackBankProxy.getColorEntry (track[p]);
                 if (color)
                     this.sendOSCColor (trackAddress + p, color[0], color[1], color[2], dump);
+                // Added
+                else
+                    this.sendOSCColor(trackAddress + p, 0, 0, 0, dump);
                 break;
 
             case 'crossfadeMode':
