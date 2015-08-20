@@ -6,6 +6,9 @@ loadAPI (1);
 load ("framework/helper/ClassLoader.js");
 load ("framework/daw/ClassLoader.js");
 load ("osc/ClassLoader.js");
+
+load ("osc/OSCWriterMixin.js");
+
 load ("Config.js");
 
 host.defineController ("Open Sound Control", "OSC", "2.20", "94DD41B0-EFEE-11E3-AC10-0800200C9A66", "Jürgen Moßgraber");
