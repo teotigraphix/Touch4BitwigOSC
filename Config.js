@@ -90,6 +90,15 @@ Config.init = function ()
         Config.enableVUMeters = value == "On";
         Config.notifyListeners (Config.ENABLE_VU_METERS);
     });
+
+    // Added
+
+    Config.enableKeyboardSetting = prefs.getEnumSetting ("Keyboard", "Workflow", [ "Off", "On" ], "Off");
+    Config.enableKeyboardSetting.addValueObserver (function (value)
+    {
+        Config.enableKeyboard = value == "On";
+        Config.notifyListeners (Config.ENABLE_KEYBOARD);
+    });
 };
 
 
@@ -97,8 +106,11 @@ Config.init = function ()
 // Property listeners
 // ------------------------------
 
+Config.ENABLE_KEYBOARD      = 7;
+Config.CONFIG_COUNT         = 7;
+
 Config.listeners = [];
-for (var i = 0; i <= Config.ENABLE_VU_METERS; i++)
+for (var i = 0; i <= Config.CONFIG_COUNT; i++)
     Config.listeners[i] = [];
 
 Config.addPropertyListener = function (property, listener)
@@ -129,3 +141,10 @@ Config.setVUMetersEnabled = function (enabled)
 };
 
 function Config () {}
+
+// Added
+
+Config.setKeyboardEnabled = function (enabled)
+{
+    Config.enableKeyboardSetting.set (enabled ? "On" : "Off");
+};
