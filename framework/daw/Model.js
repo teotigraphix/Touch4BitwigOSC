@@ -5,6 +5,9 @@
 
 function Model (userCCStart, scales, numTracks, numScenes, numSends)
 {
+    if (scales == null)
+        return;
+    
     this.numTracks = numTracks ? numTracks : 8;
     this.numScenes = numScenes ? numScenes : 8;
     this.numSends  = numSends  ? numSends  : 6;
@@ -14,7 +17,7 @@ function Model (userCCStart, scales, numTracks, numScenes, numSends)
     this.groove = new GrooveProxy ();
     this.masterTrack = new MasterTrackProxy ();
     this.trackBank = new TrackBankProxy (this.numTracks, this.numScenes, this.numSends);
-    this.effectTrackBank = new EffectTrackBankProxy (this.numTracks, this.numScenes);
+    this.effectTrackBank = new EffectTrackBankProxy (this.numTracks, this.numScenes, this.trackBank);
     this.userControlBank = new UserControlBankProxy (userCCStart);
 
     this.cursorDevice = new CursorDeviceProxy (host.createEditorCursorDevice (this.numSends), this.numSends);
