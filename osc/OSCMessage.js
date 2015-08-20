@@ -1,6 +1,16 @@
 // Written by Jürgen Moßgraber - mossgrabers.de
-// (c) 2014
+// (c) 2014-2015
 // Licensed under LGPLv3 - http://www.gnu.org/licenses/lgpl-3.0.txt
+
+OSCMessage.BUNDLE_HEADER = [ "#".charCodeAt(0),        // Bundle identification string
+                            "b".charCodeAt(0),
+                            "u".charCodeAt(0),
+                            "n".charCodeAt(0),
+                            "d".charCodeAt(0),
+                            "l".charCodeAt(0),
+                            "e".charCodeAt(0),
+                            0,                        // Null termination for string
+                            0, 0, 0, 0, 0, 0, 0, 1];  // Special time code -> execute immediately
 
 function OSCMessage ()
 {
@@ -14,39 +24,52 @@ OSCMessage.prototype.init = function (address, param, type)
 {
     this.address = address;
     this.types = [];
-    if (param != null)
+    
+    if (param instanceof Array)
     {
-        switch (typeof (param))
-        {
-            case 'string':
-                this.types.push ('s');
-                this.values.push (param);
-                break;
-
-            case 'boolean':
-                this.types.push (param ? 'T' : 'F');
-                break;
-
-            case 'number':
-                if (type)
-                    this.types.push (type);
-                else
-                {
-                    if (param % 1 === 0) // Is Integer ?
-                        this.types.push ('i');
-                    else
-                        this.types.push ('f');
-                }
-                this.values.push (param);
-                break;
-
-            default:
-                println ("Unsupported object type: " + typeof (param));
-                break;
-        }
+        for (var i = 0; i < param.length; i++)
+            this.addArgument (param[i]);
     }
     else
+       this.addArgument (param,type);
+};
+
+OSCMessage.prototype.addArgument = function (param, type)
+{
+    if (param == null)
+    {
         this.types.push ('N');
+        return;
+    }
+    
+    switch (typeof (param))
+    {
+        case 'string':
+            this.types.push ('s');
+            this.values.push (param);
+            break;
+
+        case 'boolean':
+            this.types.push (param ? 'T' : 'F');
+            break;
+
+        case 'number':
+            if (type)
+                this.types.push (type);
+            else
+            {
+                if (param % 1 === 0) // Is it an Integer ?
+                    this.types.push ('i');
+                else
+                    this.types.push ('f');
+            }
+            this.values.push (param);
+            break;
+
+        default:
+            println ("Unsupported object type: " + typeof (param));
+            break;
+    }
 };
 
 OSCMessage.prototype.parse = function (data)
@@ -87,6 +110,18 @@ OSCMessage.prototype.parse = function (data)
     return null;
 };
 
+/* Takes an array of byte arrays. */
+OSCMessage.prototype.buildBundle = function (messages)
+{
+    this.data = [].concat (OSCMessage.BUNDLE_HEADER);
+    while (msg = messages.shift ())
+    {
+        this.writeInteger (msg.length);
+        this.data = this.data.concat (msg);
+    }
+    return this.data;
+};
+
 OSCMessage.prototype.build = function ()
 {
     this.data = [];
@@ -97,6 +132,9 @@ OSCMessage.prototype.build = function ()
     this.data.push (','.charCodeAt (0));
     for (var i = 0; i < this.types.length; i++)
         this.data.push (this.types[i].charCodeAt (0));
+    // Make sure the type section is terminated correctly
+    if (this.data.length % 4 == 0)
+        this.data.push (0);
     this.alignToFourByteBoundary ();
     
     for (var i = 0; i < this.values.length; i++)
@@ -407,8 +445,19 @@ OSCMessage.prototype.readString = function ()
 
 OSCMessage.prototype.writeString = function (str)
 {
+    // Correctly terminate empty strings
+    if (str.length == 0)
+    {
+        this.data.push (0);
+        return;
+    }
+    
     for (var i = 0; i < str.length; i++)
         this.data.push (str.charCodeAt (i));
+
+    // Correctly terminate empty string
+    if (this.data.length % 4 == 0)
+        this.data.push (0);
 };
 
 // A uint32 size count, followed by that many 8-bit bytes of arbitrary binary
@@ -449,7 +498,7 @@ OSCMessage.prototype.readTimeTag = function ()
     var millisSince1970 = this.readInteger ();
     /* var fractionsOfASecond = */ this.readInteger ();
     
-    // Do it immediatly
+    // Do it immediately
     if (millisSince1970 == 0)
         return null;
 
@@ -473,7 +522,12 @@ OSCMessage.prototype.skipToFourByteBoundary = function ()
 
 OSCMessage.prototype.alignToFourByteBoundary = function ()
 {
-    var upper = 4 - (this.data.length % 4);
+    var rest = this.data.length % 4;
+    // Already aligned?
+    if (rest == 0)
+        return;
+    
+    var upper = 4 - rest;
 	for (var i = 0; i < upper; i++)
         this.data.push (0);
 };
