@@ -65,6 +65,7 @@ OSCWriter.prototype.flushTransport = function (dump)
     this.sendOSC ('/position', trans.getPositionText(), dump);
     this.sendOSC ('/numerator', trans.getNumerator(), dump);
     this.sendOSC ('/denominator', trans.getDenominator(), dump);
+    this.sendOSC ('/automationOverride', trans.isAutomationOverride, dump);
 
     //----------------------------------
     // original
@@ -192,9 +193,9 @@ OSCWriter.prototype.flushDevice = function (dump)
         this.flushFX ('/device/macro/' + oneplus + '/', cd.getMacroParam (i), dump);
         this.flushFX ('/device/modulation/' + oneplus + '/', cd.getModulationParam (i), dump);
     }
-    this.sendOSC ('/device/category', cd.categoryProvider.selectedItemVerbose, dump);
-    this.sendOSC ('/device/creator', cd.creatorProvider.selectedItemVerbose, dump);
-    this.sendOSC ('/device/preset', cd.presetProvider.selectedItemVerbose, dump);
+    //this.sendOSC ('/device/category', cd.categoryProvider.selectedItemVerbose, dump);
+    //this.sendOSC ('/device/creator', cd.creatorProvider.selectedItemVerbose, dump);
+    //this.sendOSC ('/device/preset', cd.presetProvider.selectedItemVerbose, dump);
 };
 
 OSCWriter.prototype.flushPrimaryDevice = function (dump)
@@ -212,9 +213,9 @@ OSCWriter.prototype.flushPrimaryDevice = function (dump)
         this.flushFX ('/primary/macro/' + oneplus + '/', cd.getMacroParam (i), dump);
         this.flushFX ('/primary/modulation/' + oneplus + '/', cd.getModulationParam (i), dump);
     }
-    this.sendOSC ('/primary/category', cd.categoryProvider.selectedItemVerbose, dump);
-    this.sendOSC ('/primary/creator', cd.creatorProvider.selectedItemVerbose, dump);
-    this.sendOSC ('/primary/preset', cd.presetProvider.selectedItemVerbose, dump);
+    //this.sendOSC ('/primary/category', cd.categoryProvider.selectedItemVerbose, dump);
+    //this.sendOSC ('/primary/creator', cd.creatorProvider.selectedItemVerbose, dump);
+    //this.sendOSC ('/primary/preset', cd.presetProvider.selectedItemVerbose, dump);
 };
 
 OSCWriter.prototype.flushUserDevice = function (dump)

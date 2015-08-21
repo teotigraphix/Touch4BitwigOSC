@@ -8,6 +8,7 @@ load ("framework/daw/ClassLoader.js");
 load ("osc/ClassLoader.js");
 
 load ("osc/OSCWriterMixin.js");
+load ("osc/OSCParserMixin.js");
 
 load ("Config.js");
 

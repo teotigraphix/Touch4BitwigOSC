@@ -9,9 +9,41 @@ function OSCModel (scales)
 {
     if (scales == null)
         return;
-    
-    Model.call (this, 70, scales, 8, 8, 8);
-    
+
+    //Model.call (this, 70, scales, 8, 8, 8);
+
+    var userCCStart = 70;
+    var numTracks = 8;
+    var numScenes = 8;
+    var numSends = 8;
+
+    //--------------------------------------------------------------------------
+
+    this.numTracks = numTracks ? numTracks : 8;
+    this.numScenes = numScenes ? numScenes : 8;
+    this.numSends  = numSends  ? numSends  : 6;
+
+    this.application = new ApplicationProxy ();
+    this.transport = new TransportProxy ();
+    this.groove = new GrooveProxy ();
+    this.masterTrack = new MasterTrackProxy ();
+    this.trackBank = new TrackBankProxy (this.numTracks, this.numScenes, this.numSends);
+    this.effectTrackBank = new EffectTrackBankProxy (this.numTracks, this.numScenes, this.trackBank);
+    this.userControlBank = new UserControlBankProxy (userCCStart);
+
+    this.cursorDevice = new CursorDeviceProxy (host.createEditorCursorDevice (this.numSends), this.numSends);
+    this.arranger = new ArrangerProxy ();
+    this.mixer = new MixerProxy ();
+    this.sceneBank = new SceneBankProxy (this.numScenes);
+
+    // this.browser = new BrowserProxy (this.cursorDevice);
+
+    this.currentTrackBank = this.trackBank;
+
+    this.scales = scales;
+
+    //--------------------------------------------------------------------------
+
     this.pressedKeys = initArray (0, 128);
     
     var tb = this.getTrackBank ();
