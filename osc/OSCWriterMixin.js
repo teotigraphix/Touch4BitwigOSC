@@ -61,6 +61,14 @@ OSCWriter.prototype.flush = function (dump)
 OSCWriter.prototype.flushTransport = function (dump)
 {
     var trans = this.model.getTransport ();
+
+    this.sendOSC ('/position', trans.getPositionText(), dump);
+    this.sendOSC ('/numerator', trans.getNumerator(), dump);
+    this.sendOSC ('/denominator', trans.getDenominator(), dump);
+
+    //----------------------------------
+    // original
+    //----------------------------------
     this.sendOSC ('/play', trans.isPlaying, dump);
     this.sendOSC ('/record', trans.isRecording, dump);
     this.sendOSC ('/overdub', trans.isOverdub, dump);

@@ -12,7 +12,6 @@ function CursorDeviceProxy (cursorDevice, numSends)
     this.numDeviceLayers = 8;
     this.numDevicesInBank = 8;
     this.numDrumPadLayers = 16;
-    this.presetWidth = 16;
 
     this.canSelectPrevious = true;
     this.canSelectNext = true;
@@ -190,7 +189,6 @@ function CursorDeviceProxy (cursorDevice, numSends)
         for (var j = 0; j < this.numSends; j++)
         {
             var s = layer.getSend (j);
-// TODO println(s);
             if (s == null)
                 continue;
             s.addNameObserver (this.textLength, '', doObjectDoubleIndex (this, i, j, CursorDeviceProxy.prototype.handleDrumPadSendName));
@@ -200,66 +198,6 @@ function CursorDeviceProxy (cursorDevice, numSends)
 
         this.drumPadBanks[i] = layer.createDeviceBank (this.numDevicesInBank);
     }
-
-    //----------------------------------
-    // Presets
-    //----------------------------------
-
-    this.categoryProvider = new PresetProvider (PresetProvider.Kind.CATEGORY);
-    this.creatorProvider = new PresetProvider (PresetProvider.Kind.CREATOR);
-    this.presetProvider = new PresetProvider (PresetProvider.Kind.PRESET);
-
-    // All categories
-    this.cursorDevice.addPresetCategoriesObserver (doObject (this, function ()
-    {
-        this.categoryProvider.setItems (arguments);
-    }));
-
-    // This allows matching from selection made in DAW (full name)
-    this.cursorDevice.addPresetCategoryObserver (100, '', doObject (this, function (name)
-    {
-        this.categoryProvider.setSelectedItemVerbose (name);
-    }));
-
-    // Character display
-    this.cursorDevice.addPresetCategoryObserver (this.presetWidth, '', doObject (this, function (name)
-    {
-        this.categoryProvider.setSelectedItem (name);
-    }));
-
-    // All creators
-    this.cursorDevice.addPresetCreatorsObserver (doObject (this, function ()
-    {
-        this.creatorProvider.setItems (arguments);
-    }));
-
-    // This allows matching from selection made in DAW (full name)
-    this.cursorDevice.addPresetCreatorObserver (100, '', doObject (this, function (name)
-    {
-        this.creatorProvider.setSelectedItemVerbose (name);
-    }));
-
-    // Character display
-    this.cursorDevice.addPresetCreatorObserver (this.presetWidth, '', doObject (this, function (name)
-    {
-        this.creatorProvider.setSelectedItem (name);
-    }));
-
-    // All presets
-    this.cursorDevice.addPresetNamesObserver (doObject (this, function ()
-    {
-        this.presetProvider.setItems (arguments);
-    }));
-    
-    this.cursorDevice.addPresetNameObserver (100, '', doObject (this, function (name)
-    {
-        this.presetProvider.setSelectedItemVerbose (name);
-    }));
-    
-    this.cursorDevice.addPresetNameObserver (this.presetWidth, '', doObject (this, function (name)
-    {
-        this.presetProvider.setSelectedItem (name);
-    }));
 }
 
 //--------------------------------------
@@ -354,46 +292,6 @@ CursorDeviceProxy.prototype.getSelectedParameterPage = function ()
 CursorDeviceProxy.prototype.setSelectedParameterPage = function (index)
 {
     this.cursorDevice.setParameterPage (index);
-};
-
-CursorDeviceProxy.prototype.setPresetCategory = function (index)
-{
-    this.cursorDevice.setPresetCategory (index);
-};
-
-CursorDeviceProxy.prototype.setPresetCreator = function (index)
-{
-    this.cursorDevice.setPresetCreator (index);
-};
-
-CursorDeviceProxy.prototype.switchToNextPreset = function ()
-{
-    this.cursorDevice.switchToNextPreset ();
-};
-
-CursorDeviceProxy.prototype.switchToNextPresetCategory = function ()
-{
-    this.cursorDevice.switchToNextPresetCategory ();
-};
-
-CursorDeviceProxy.prototype.switchToNextPresetCreator = function ()
-{
-    this.cursorDevice.switchToNextPresetCreator ();
-};
-
-CursorDeviceProxy.prototype.switchToPreviousPreset = function ()
-{
-    this.cursorDevice.switchToPreviousPreset ();
-};
-
-CursorDeviceProxy.prototype.switchToPreviousPresetCategory = function ()
-{
-    this.cursorDevice.switchToPreviousPresetCategory ();
-};
-
-CursorDeviceProxy.prototype.switchToPreviousPresetCreator = function ()
-{
-    this.cursorDevice.switchToPreviousPresetCreator ();
 };
 
 CursorDeviceProxy.prototype.toggleEnabledState = function ()
@@ -630,12 +528,68 @@ CursorDeviceProxy.prototype.changeLayerOrDrumPadVolume = function (index, value,
         this.changeLayerVolume (index, value, fractionValue);
 };
 
+CursorDeviceProxy.prototype.setLayerOrDrumPadVolume = function (index, value)
+{
+    if (this.hasDrumPads ())
+        this.setDrumPadVolume (index, value);
+    else
+        this.setLayerVolume (index, value);
+};
+
+CursorDeviceProxy.prototype.resetLayerOrDrumPadVolume = function (index)
+{
+    if (this.hasDrumPads ())
+        this.resetDrumPadVolume (index);
+    else
+        this.resetLayerVolume (index);
+};
+
 CursorDeviceProxy.prototype.changeLayerOrDrumPadPan = function (index, value, fractionValue)
 {
     if (this.hasDrumPads ())
         this.changeDrumPadPan (index, value, fractionValue);
     else
         this.changeLayerPan (index, value, fractionValue);
+};
+
+CursorDeviceProxy.prototype.setLayerOrDrumPadPan = function (index, value)
+{
+    if (this.hasDrumPads ())
+        this.setDrumPadPan (index, value);
+    else
+        this.setLayerPan (index, value);
+};
+
+CursorDeviceProxy.prototype.resetLayerOrDrumPadPan = function (index)
+{
+    if (this.hasDrumPads ())
+        this.resetDrumPadPan (index);
+    else
+        this.resetLayerPan (index);
+};
+
+CursorDeviceProxy.prototype.changeLayerOrDrumPadSend = function (index, send, value, fractionValue)
+{
+    if (this.hasDrumPads ())
+        this.changeDrumPadSend (index, send, value, fractionValue);
+    else
+        this.changeLayerSend (index, send, value, fractionValue);
+};
+
+CursorDeviceProxy.prototype.setLayerOrDrumPadSend = function (index, send, value)
+{
+    if (this.hasDrumPads ())
+        this.setDrumPadSend (index, send, value);
+    else
+        this.setLayerSend (index, send, value);
+};
+
+CursorDeviceProxy.prototype.resetLayerOrDrumPadSend = function (index, send)
+{
+    if (this.hasDrumPads ())
+        this.resetDrumPadSend (index, send);
+    else
+        this.resetLayerSend (index, send);
 };
 
 CursorDeviceProxy.prototype.toggleLayerOrDrumPadMute = function (index)
@@ -646,12 +600,28 @@ CursorDeviceProxy.prototype.toggleLayerOrDrumPadMute = function (index)
         this.toggleLayerMute (index);
 };
 
+CursorDeviceProxy.prototype.setLayerOrDrumPadMute = function (index, value)
+{
+    if (this.hasDrumPads ())
+        this.setDrumPadMute (index, value);
+    else
+        this.setLayerMute (index, value);
+};
+
 CursorDeviceProxy.prototype.toggleLayerOrDrumPadSolo = function (index)
 {
     if (this.hasDrumPads ())
         this.toggleDrumPadSolo (index);
     else
         this.toggleLayerSolo (index);
+};
+
+CursorDeviceProxy.prototype.setLayerOrDrumPadSolo = function (index, value)
+{
+    if (this.hasDrumPads ())
+        this.setDrumPadSolo (index, value);
+    else
+        this.setLayerSolo (index, value);
 };
 
 //--------------------------------------
@@ -768,6 +738,18 @@ CursorDeviceProxy.prototype.changeLayerVolume = function (index, value, fraction
     this.layerBank.getChannel (index).getVolume ().set (t.volume, Config.maxParameterValue);
 };
 
+CursorDeviceProxy.prototype.setLayerVolume = function (index, value)
+{
+    var t = this.getLayer (index);
+    t.volume = value;
+    this.layerBank.getChannel (index).getVolume ().set (t.volume, Config.maxParameterValue);
+};
+
+CursorDeviceProxy.prototype.resetLayerVolume = function (index)
+{
+    this.layerBank.getChannel (index).getVolume ().reset ();
+};
+
 CursorDeviceProxy.prototype.changeLayerPan = function (index, value, fractionValue)
 {
     var t = this.getLayer (index);
@@ -775,14 +757,57 @@ CursorDeviceProxy.prototype.changeLayerPan = function (index, value, fractionVal
     this.layerBank.getChannel (index).getPan ().set (t.pan, Config.maxParameterValue);
 };
 
+CursorDeviceProxy.prototype.setLayerPan = function (index, value)
+{
+    var t = this.getLayer (index);
+    t.pan = value;
+    this.layerBank.getChannel (index).getPan ().set (t.pan, Config.maxParameterValue);
+};
+
+CursorDeviceProxy.prototype.resetLayerPan = function (index)
+{
+    this.layerBank.getChannel (index).getPan ().reset ();
+};
+
+CursorDeviceProxy.prototype.changeLayerSend = function (index, sendIndex, value, fractionValue)
+{
+    var s = this.getLayer (index).sends[sendIndex];
+    s.volume = changeValue (value, s.volume, fractionValue, Config.maxParameterValue);
+    var send = this.layerBank.getChannel (index).getSend (sendIndex);
+    send.set (s.volume, Config.maxParameterValue);
+};
+
+CursorDeviceProxy.prototype.setLayerSend = function (index, sendIndex, value)
+{
+    var t = this.getLayer (index);
+    var send = t.sends[sendIndex];
+    send.volume = value;
+    this.layerBank.getChannel (t.index).getSend (sendIndex).set (send.volume, Config.maxParameterValue);
+};
+
+CursorDeviceProxy.prototype.resetLayerSend = function (index, sendIndex)
+{
+    this.layerBank.getChannel (index).getSend (sendIndex).reset ();
+};
+
 CursorDeviceProxy.prototype.toggleLayerMute = function (index)
 {
     this.layerBank.getChannel (index).getMute ().set (!this.getLayer (index).mute);
 };
 
+CursorDeviceProxy.prototype.setLayerMute = function (index, value)
+{
+    this.layerBank.getChannel (index).getMute ().set (value);
+};
+
 CursorDeviceProxy.prototype.toggleLayerSolo = function (index)
 {
     this.layerBank.getChannel (index).getSolo ().set (!this.getLayer (index).solo);
+};
+
+CursorDeviceProxy.prototype.setLayerSolo = function (index, value)
+{
+    this.layerBank.getChannel (index).getSolo ().set (value);
 };
 
 //--------------------------------------
@@ -868,6 +893,18 @@ CursorDeviceProxy.prototype.changeDrumPadVolume = function (index, value, fracti
     this.drumPadBank.getChannel (index).getVolume ().set (t.volume, Config.maxParameterValue);
 };
 
+CursorDeviceProxy.prototype.setDrumPadVolume = function (index, value)
+{
+    var t = this.getDrumPad (index);
+    t.volume = value;
+    this.drumPadBank.getChannel (index).getVolume ().set (t.volume, Config.maxParameterValue);
+};
+
+CursorDeviceProxy.prototype.resetDrumPadVolume = function (index)
+{
+    this.drumPadBank.getChannel (index).getVolume ().reset ();
+};
+
 CursorDeviceProxy.prototype.changeDrumPadPan = function (index, value, fractionValue)
 {
     var t = this.getDrumPad (index);
@@ -875,14 +912,57 @@ CursorDeviceProxy.prototype.changeDrumPadPan = function (index, value, fractionV
     this.drumPadBank.getChannel (index).getPan ().set (t.pan, Config.maxParameterValue);
 };
 
+CursorDeviceProxy.prototype.setDrumPadPan = function (index, value)
+{
+    var t = this.getDrumPad (index);
+    t.pan = value;
+    this.drumPadBank.getChannel (index).getPan ().set (t.pan, Config.maxParameterValue);
+};
+
+CursorDeviceProxy.prototype.resetDrumPadPan = function (index)
+{
+    this.drumPadBank.getChannel (index).getPan ().reset ();
+};
+
+CursorDeviceProxy.prototype.changeDrumPadSend = function (index, sendIndex, value, fractionValue)
+{
+    var s = this.getDrumPad (index).sends[sendIndex];
+    s.volume = changeValue (value, s.volume, fractionValue, Config.maxParameterValue);
+    var send = this.drumPadBank.getChannel (index).getSend (sendIndex);
+    send.set (s.volume, Config.maxParameterValue);
+};
+
+CursorDeviceProxy.prototype.setDrumPadSend = function (index, sendIndex, value)
+{
+    var t = this.getDrumPad (index);
+    var send = t.sends[sendIndex];
+    send.volume = value;
+    this.drumPadBank.getChannel (t.index).getSend (sendIndex).set (send.volume, Config.maxParameterValue);
+};
+
+CursorDeviceProxy.prototype.resetDrumPadSend = function (index, sendIndex)
+{
+    this.drumPadBank.getChannel (index).getSend (sendIndex).reset ();
+};
+
 CursorDeviceProxy.prototype.toggleDrumPadMute = function (index)
 {
     this.drumPadBank.getChannel (index).getMute ().set (!this.getDrumPad (index).mute);
 };
 
+CursorDeviceProxy.prototype.setDrumPadMute = function (index, value)
+{
+    this.drumPadBank.getChannel (index).getMute ().set (value);
+};
+
 CursorDeviceProxy.prototype.toggleDrumPadSolo = function (index)
 {
     this.drumPadBank.getChannel (index).getSolo ().set (!this.getDrumPad (index).solo);
+};
+
+CursorDeviceProxy.prototype.setDrumPadSolo = function (index, value)
+{
+    this.drumPadBank.getChannel (index).getSolo ().set (value);
 };
 
 CursorDeviceProxy.prototype.selectFirstDeviceInDrumPad = function (index)
@@ -1426,91 +1506,8 @@ CursorDeviceProxy.prototype.createDeviceLayers = function (count)
             sends: []
         };
         for (var j = 0; j < this.numSends; j++)
-            l.sends.push ({ index: j });
+            l.sends.push ({ index: j, volume: 0 });
         layers.push (l);
     }
     return layers;
-};
-
-//--------------------------------------
-// PresetProvider Class
-//--------------------------------------
-
-function PresetProvider (kind)
-{
-    this.kind = kind;
-    this.items = [];
-    this.selectedItem = null;
-    this.selectedItemVerbose = null;
-    this.selectedIndex = -1;
-}
-
-PresetProvider.Kind =
-{
-    CATEGORY: 0,
-    CREATOR:  1,
-    PRESET:   2
-};
-
-PresetProvider.prototype.getSelectedIndex = function ()
-{
-    return this.selectedIndex;
-};
-
-PresetProvider.prototype.getSelectedItem = function ()
-{
-    return this.selectedItem;
-};
-
-PresetProvider.prototype.setSelectedItem = function (item)
-{
-    this.selectedItem = item;
-};
-
-PresetProvider.prototype.setSelectedItemVerbose = function (selectedItemVerbose)
-{
-    this.selectedItemVerbose = selectedItemVerbose;
-    this.itemsChanged ();
-};
-
-PresetProvider.prototype.getPagedView = function (pageSize)
-{
-    var page = Math.floor (this.selectedIndex / pageSize);
-    var start = page * pageSize;
-    var result = [];
-    for (var i = start; i < start + pageSize; i++)
-        result.push (this.items[i]);
-    return result;
-};
-
-PresetProvider.prototype.getView = function (length)
-{
-    var result = [];
-    for (var i = this.selectedIndex; i < this.selectedIndex + length; i++)
-        result.push (this.items[i]);
-    return result;
-};
-
-PresetProvider.prototype.setItems = function (items)
-{
-    this.items = items;
-    this.itemsChanged ();
-};
-
-PresetProvider.prototype.itemsChanged = function ()
-{
-    this.selectedIndex = 0;
-
-    if (this.items == null)
-        return;
-
-    var len = this.items.length;
-    for (var i = 0; i < len; i++)
-    {
-        if (this.items[i] == this.selectedItemVerbose)
-        {
-            this.selectedIndex = i;
-            break;
-        }
-    }
 };
