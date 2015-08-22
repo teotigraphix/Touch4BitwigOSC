@@ -12,10 +12,20 @@ OSCParser.prototype.parse = function (msg)
 
     var value = msg.values == null ? null : msg.values[0];
 
+    var app = this.model.getApplication ();
+
     switch (oscParts.shift ())
     {
+        case 'active':
+            app.toggleEngineActive ();
+            break;
+
         case 'automationOverride':
             this.transport.resetAutomationOverrides ();
+            break;
+
+        default:
+            println ('Unhandled OSC Command: ' + msg.address + ' ' + value);
             break;
     }
 };

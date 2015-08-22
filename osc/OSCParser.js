@@ -385,9 +385,9 @@ OSCParser.prototype.parse = function (msg)
             }
             break;
 
-		default:
-			println ('Unhandled OSC Command: ' + msg.address + ' ' + value);
-			break;
+		//default:
+		//	println ('Unhandled OSC Command: ' + msg.address + ' ' + value);
+		//	break;
 	}
 };
 
