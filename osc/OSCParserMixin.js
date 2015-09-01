@@ -20,12 +20,26 @@ OSCParser.prototype.parse = function (msg)
             app.toggleEngineActive ();
             break;
 
+
+        case 'panel':
+            //var app = this.model.getApplication ();
+            switch (oscParts[0])
+            {
+                case 'browser':
+                    app.toggleBrowserVisibility ();
+                    break;
+                case 'inspector':
+                    app.toggleInspector ();
+                    break;
+            }
+            break;
+
         case 'automationOverride':
             this.transport.resetAutomationOverrides ();
             break;
 
         default:
-            println ('Unhandled OSC Command: ' + msg.address + ' ' + value);
+            //println ('Unhandled OSC Command: ' + msg.address + ' ' + value);
             break;
     }
 };
