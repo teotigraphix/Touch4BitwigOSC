@@ -1,4 +1,5 @@
 // Written by Jürgen Moßgraber - mossgrabers.de
+//            Michael Schmalle - teotigraphix.com
 // (c) 2014-2015
 // Licensed under LGPLv3 - http://www.gnu.org/licenses/lgpl-3.0.txt
 
@@ -12,7 +13,7 @@ load ("osc/OSCParserMixin.js");
 
 load ("Config.js");
 
-host.defineController ("Open Sound Control", "OSC", "2.20", "94DD41B0-EFEE-11E3-AC10-0800200C9A66", "Jürgen Moßgraber");
+host.defineController ("Teoti Graphix, LLC", "Touch4Bitwig", "0.1", "CB450840-526D-11E5-B970-0800200C9A66", "Michael Schmalle");
 host.defineMidiPorts (1, 0);
 
 var model = null;

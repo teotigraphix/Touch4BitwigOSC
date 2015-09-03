@@ -14,7 +14,7 @@ function OSCParser (model, receiveHost, receivePort)
     this.model.updateNoteMapping ();
     
     this.port = host.getMidiInPort (0);
-    this.noteInput = this.port.createNoteInput ("OSC Midi");
+    this.noteInput = this.port.createNoteInput ("Touch4Bitwig Midi");
     
     host.addDatagramPacketObserver (receiveHost, receivePort, doObject (this, function (data)
     {
