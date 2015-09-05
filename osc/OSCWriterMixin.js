@@ -54,6 +54,8 @@ OSCWriter.prototype.flush = function (dump)
     if (this.messages.length == 0)
         return;
 
+    this.sendOSC ('/flushComplete', true, dump);
+
     var data = new OSCMessage ().buildBundle (this.messages);
     host.sendDatagramPacket (Config.sendHost, Config.sendPort, data);
 };
