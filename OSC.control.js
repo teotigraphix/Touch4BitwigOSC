@@ -38,6 +38,9 @@ function init ()
 	parser = new OSCParser (model, Config.receiveHost, Config.receivePort);
     writer = new OSCWriter (model);
 
+    model.parser = parser;
+    model.writer = writer;
+
     scheduleTask (function ()
     {
         writer.flush (true);

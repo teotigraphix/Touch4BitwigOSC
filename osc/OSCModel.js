@@ -24,6 +24,10 @@ function OSCModel (scales)
     this.numSends  = numSends  ? numSends  : 6;
 
     this.application = new ApplicationProxy ();
+
+    this.addApplicationExtras (this.application.application);
+    this.currentProjectName = "";
+
     this.transport = new TransportProxy ();
     this.groove = new GrooveProxy ();
     this.masterTrack = new MasterTrackProxy ();
@@ -41,6 +45,16 @@ function OSCModel (scales)
     this.currentTrackBank = this.trackBank;
 
     this.scales = scales;
+
+    /**
+     * @type {OSCParser}
+     */
+    this.parser = null;
+
+    /**
+     * @type {OSCWriter}
+     */
+    this.writer = null;
 
     //--------------------------------------------------------------------------
 
@@ -62,6 +76,22 @@ function OSCModel (scales)
     }));
 }
 OSCModel.prototype = new Model ();
+
+/**
+ *
+ * @param {Application} application
+ */
+OSCModel.prototype.addApplicationExtras = function (application)
+{
+    application.addProjectNameObserver (doObject (this, OSCModel.prototype.handleProjectNameObserver), 100);
+};
+
+OSCModel.prototype.handleProjectNameObserver = function (name)
+{
+    //println(">>> Flushing for new Project " + name);
+    this.currentProjectName = name;
+    this.writer.flush (true);
+};
 
 OSCModel.prototype.updateNoteMapping = function ()
 {

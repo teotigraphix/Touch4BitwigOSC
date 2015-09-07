@@ -55,6 +55,7 @@ OSCWriter.prototype.flush = function (dump)
         return;
 
     this.sendOSC ('/flushComplete', true, dump);
+    this.sendOSC ('/project/name', this.model.currentProjectName, dump);
 
     var data = new OSCMessage ().buildBundle (this.messages);
     host.sendDatagramPacket (Config.sendHost, Config.sendPort, data);

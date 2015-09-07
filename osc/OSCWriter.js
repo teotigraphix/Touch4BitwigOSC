@@ -38,9 +38,17 @@ OSCWriter.NOTE_STATE_COLORS[Scales.SCALE_COLOR_OCTAVE]       = [ 0.2666666805744
 OSCWriter.NOTE_STATE_COLORS[Scales.SCALE_COLOR_NOTE]         = [ 1, 1, 1 ]; // White
 OSCWriter.NOTE_STATE_COLORS[Scales.SCALE_COLOR_OUT_OF_SCALE] = [ 0, 0, 0 ]; // Black
 
-
+/**
+ *
+ * @param model {OSCModel}
+ * @param oscPort {integer}
+ * @constructor
+ */
 function OSCWriter (model, oscPort)
 {
+    /**
+     * @type {OSCModel}
+     */
     this.model = model;
     
     this.oldValues = {};
