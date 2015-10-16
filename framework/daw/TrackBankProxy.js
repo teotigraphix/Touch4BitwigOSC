@@ -3,14 +3,19 @@
 // (c) 2014-2015
 // Licensed under LGPLv3 - http://www.gnu.org/licenses/lgpl-3.0.txt
 
-function TrackBankProxy (numTracks, numScenes, numSends)
+function TrackBankProxy (numTracks, numScenes, numSends, hasFlatTrackList)
 {
     AbstractTrackBankProxy.call (this, numTracks, numScenes, numSends);
 
-    this.trackBank = host.createMainTrackBank (numTracks, numSends, numScenes);
-    this.trackSelectionBank = host.createMainTrackBank (AbstractTrackBankProxy.OBSERVED_TRACKS, 0, 0);
+    if (hasFlatTrackList)
+        this.trackBank = host.createMainTrackBank (numTracks, numSends, numScenes);
+    else
+        this.trackBank = this.cursorTrack.createSiblingsTrackBank (numTracks, numSends, numScenes, false, false);
     
     this.init ();
+
+    // We only need 1 track of the children to move down in the group tree
+    this.childTrackBank = this.cursorTrack.createMainTrackBank 	(1, 0, 0, false);
     
     // Sends values & texts
     for (var i = 0; i < numTracks; i++)
@@ -26,6 +31,17 @@ function TrackBankProxy (numTracks, numScenes, numSends)
     }
 }
 TrackBankProxy.prototype = new AbstractTrackBankProxy ();
+
+TrackBankProxy.prototype.selectChildren = function ()
+{
+    var subChannel = this.childTrackBank.getChannel (0);
+    this.cursorTrack.selectChannel (subChannel);
+};
+
+TrackBankProxy.prototype.selectParent = function ()
+{
+    this.cursorTrack.selectParent ();
+};
 
 TrackBankProxy.prototype.changeSend = function (index, sendIndex, value, fractionValue)
 {
@@ -46,6 +62,11 @@ TrackBankProxy.prototype.setSend = function (index, sendIndex, value)
 TrackBankProxy.prototype.resetSend = function (index, sendIndex)
 {
     this.trackBank.getChannel (index).getSend (sendIndex).reset ();
+};
+
+TrackBankProxy.prototype.touchSend = function (index, sendIndex, isBeingTouched)
+{
+    this.trackBank.getChannel (index).getSend (sendIndex).touch (isBeingTouched);
 };
 
 TrackBankProxy.prototype.setSendIndication = function (index, sendIndex, indicate)

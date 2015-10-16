@@ -3,29 +3,51 @@
 // (c) 2014-2015
 // Licensed under LGPLv3 - http://www.gnu.org/licenses/lgpl-3.0.txt
 
-function Model (userCCStart, scales, numTracks, numScenes, numSends)
+function Model (userCCStart,               // The MIDI CC at which the user parameters start
+                scales,                    // The scales object
+                numTracks,                 // The number of track to monitor (per track bank)
+                numScenes,                 // The number of scenes to monitor (per scene bank)
+                numSends,                  // The number of sends to monitor
+                numFilterColumns,          // The number of filters columns in the browser to monitor
+                numFilterColumnEntries,    // The number of entries in one filter column to monitor
+                numResults,                // The number of search results in the browser to monitor
+                hasFlatTrackList,          // Don't navigate groups, all tracks are flat
+                numParams,                 // The number of parameter of a device to monitor
+                numDevicesInBank,          // The number of devices to monitor
+                numDeviceLayers,           // The number of device layers to monitor
+                numDrumPadLayers           // The number of drum pad layers to monitor
+               )
 {
     if (scales == null)
         return;
     
-    this.numTracks = numTracks ? numTracks : 8;
-    this.numScenes = numScenes ? numScenes : 8;
-    this.numSends  = numSends  ? numSends  : 6;
+    this.numTracks              = numTracks ? numTracks : 8;
+    this.numScenes              = numScenes ? numScenes : 8;
+    this.numSends               = numSends  ? numSends  : 6;
+    this.numFilterColumns       = numFilterColumns ? numFilterColumns : 6;
+    this.numFilterColumnEntries = numFilterColumnEntries ? numFilterColumnEntries : 16;
+    this.numResults             = numResults ? numResults : 16;
+    this.hasFlatTrackList       = hasFlatTrackList ? true : false;
+    this.numParams              = numParams ? numParams : 8;
+    this.numDevicesInBank       = numDevicesInBank ? numDevicesInBank : 8;
+    this.numDeviceLayers        = numDeviceLayers ? numDeviceLayers : 8;
+    this.numDrumPadLayers       = numDrumPadLayers ? numDrumPadLayers : 16;
 
     this.application = new ApplicationProxy ();
     this.transport = new TransportProxy ();
     this.groove = new GrooveProxy ();
     this.masterTrack = new MasterTrackProxy ();
-    this.trackBank = new TrackBankProxy (this.numTracks, this.numScenes, this.numSends);
+    this.trackBank = new TrackBankProxy (this.numTracks, this.numScenes, this.numSends, this.hasFlatTrackList);
     this.effectTrackBank = new EffectTrackBankProxy (this.numTracks, this.numScenes, this.trackBank);
-    this.userControlBank = new UserControlBankProxy (userCCStart);
+    if (userCCStart >= 0)
+        this.userControlBank = new UserControlBankProxy (userCCStart);
 
     this.cursorDevice = new CursorDeviceProxy (host.createEditorCursorDevice (this.numSends), this.numSends);
     this.arranger = new ArrangerProxy ();
     this.mixer = new MixerProxy ();
     this.sceneBank = new SceneBankProxy (this.numScenes);
     
-    this.browser = new BrowserProxy (this.cursorDevice);
+    this.browser = new BrowserProxy (this.cursorDevice, this.numFilterColumns, this.numFilterColumnEntries, this.numResults);
 
     this.currentTrackBank = this.trackBank;
 

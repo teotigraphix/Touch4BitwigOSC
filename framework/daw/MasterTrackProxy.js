@@ -20,6 +20,7 @@ function MasterTrackProxy ()
     this.volume = null;
     this.volumeStr = null;
     this.selected = false;
+    this.isGroup = false;
 
     this.textLength = GlobalConfig.MASTER_TRACK_TEXT_LENGTH;
 
@@ -89,6 +90,11 @@ MasterTrackProxy.prototype.resetVolume = function ()
     this.masterTrack.getVolume ().reset ();
 };
 
+MasterTrackProxy.prototype.touchVolume = function (isBeingTouched)
+{
+    this.masterTrack.getVolume ().touch (isBeingTouched);
+};
+
 MasterTrackProxy.prototype.changePan = function (value, fractionValue)
 {
     this.pan = changeValue (value, this.pan, fractionValue, Config.maxParameterValue);
@@ -109,6 +115,11 @@ MasterTrackProxy.prototype.setPanIndication = function (indicate)
 MasterTrackProxy.prototype.resetPan = function ()
 {
     this.masterTrack.getPan ().reset ();
+};
+
+MasterTrackProxy.prototype.touchPan = function (isBeingTouched)
+{
+    this.masterTrack.getPan ().touch (isBeingTouched);
 };
 
 MasterTrackProxy.prototype.setIsActivated = function (value)
