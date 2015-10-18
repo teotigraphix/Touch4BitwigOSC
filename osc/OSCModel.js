@@ -16,31 +16,69 @@ function OSCModel (scales)
     var numTracks = 8;
     var numScenes = 8;
     var numSends = 8;
+    var numFilterColumns = 6;
+    var numFilterColumnEntries = 16;
+    var numResults = 16;
+    var hasFlatTrackList = false;
+    var numParams = 8;
+    var numDevicesInBank = 8;
+    var numDeviceLayers = 8;
+    var numDrumPadLayers = 16;
 
     //--------------------------------------------------------------------------
 
-    this.numTracks = numTracks ? numTracks : 8;
-    this.numScenes = numScenes ? numScenes : 8;
-    this.numSends  = numSends  ? numSends  : 6;
+    //this.numTracks = numTracks ? numTracks : 8;
+    //this.numScenes = numScenes ? numScenes : 8;
+    //this.numSends  = numSends  ? numSends  : 6;
+    //
+    //this.application = new ApplicationProxy ();
+    //
+    //this.addApplicationExtras (this.application.application);
+    //this.currentProjectName = "";
+    //
+    //this.transport = new TransportProxy ();
+    //this.groove = new GrooveProxy ();
+    //this.masterTrack = new MasterTrackProxy ();
+    //this.trackBank = new TrackBankProxy (this.numTracks, this.numScenes, this.numSends);
+    //this.effectTrackBank = new EffectTrackBankProxy (this.numTracks, this.numScenes, this.trackBank);
+    //this.userControlBank = new UserControlBankProxy (userCCStart);
+    //
+    //this.cursorDevice = new CursorDeviceProxy (host.createEditorCursorDevice (this.numSends), this.numSends);
+    //this.arranger = new ArrangerProxy ();
+    //this.mixer = new MixerProxy ();
+    //this.sceneBank = new SceneBankProxy (this.numScenes);
+    //
+    //// this.browser = new BrowserProxy (this.cursorDevice);
+    //
+    //this.currentTrackBank = this.trackBank;
+
+    this.numTracks              = numTracks ? numTracks : 8;
+    this.numScenes              = numScenes ? numScenes : 8;
+    this.numSends               = numSends  ? numSends  : 6;
+    this.numFilterColumns       = numFilterColumns ? numFilterColumns : 6;
+    this.numFilterColumnEntries = numFilterColumnEntries ? numFilterColumnEntries : 16;
+    this.numResults             = numResults ? numResults : 16;
+    this.hasFlatTrackList       = hasFlatTrackList ? true : false;
+    this.numParams              = numParams ? numParams : 8;
+    this.numDevicesInBank       = numDevicesInBank ? numDevicesInBank : 8;
+    this.numDeviceLayers        = numDeviceLayers ? numDeviceLayers : 8;
+    this.numDrumPadLayers       = numDrumPadLayers ? numDrumPadLayers : 16;
 
     this.application = new ApplicationProxy ();
-
-    this.addApplicationExtras (this.application.application);
-    this.currentProjectName = "";
-
     this.transport = new TransportProxy ();
     this.groove = new GrooveProxy ();
     this.masterTrack = new MasterTrackProxy ();
-    this.trackBank = new TrackBankProxy (this.numTracks, this.numScenes, this.numSends);
+    this.trackBank = new TrackBankProxy (this.numTracks, this.numScenes, this.numSends, this.hasFlatTrackList);
     this.effectTrackBank = new EffectTrackBankProxy (this.numTracks, this.numScenes, this.trackBank);
-    this.userControlBank = new UserControlBankProxy (userCCStart);
+    if (userCCStart >= 0)
+        this.userControlBank = new UserControlBankProxy (userCCStart);
 
     this.cursorDevice = new CursorDeviceProxy (host.createEditorCursorDevice (this.numSends), this.numSends);
     this.arranger = new ArrangerProxy ();
     this.mixer = new MixerProxy ();
     this.sceneBank = new SceneBankProxy (this.numScenes);
 
-    // this.browser = new BrowserProxy (this.cursorDevice);
+    this.browser = new BrowserProxy (this.cursorDevice, this.numFilterColumns, this.numFilterColumnEntries, this.numResults);
 
     this.currentTrackBank = this.trackBank;
 
