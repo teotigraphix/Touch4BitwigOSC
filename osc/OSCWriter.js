@@ -2,7 +2,8 @@
 // (c) 2014-2015
 // Licensed under LGPLv3 - http://www.gnu.org/licenses/lgpl-3.0.txt
 
-OSCWriter.TRACK_ATTRIBS = [ "exists", "activated", "selected", "name", "volumeStr", "volume", "panStr", "pan", "color", "vu", "mute", "solo", "recarm", "monitor", "autoMonitor", "canHoldNotes", "sends", "slots", "crossfadeMode" ];
+OSCWriter.TRACK_ATTRIBS = [ "exists", "activated", "selected", "isGroup", "name", "volumeStr", "volume", "panStr", "pan", "color", "vu", "mute", "solo", "recarm", "monitor", "autoMonitor", "canHoldNotes", "sends", "slots", "crossfadeMode" ];
+OSCWriter.DEVICE_LAYER_ATTRIBS = [ "exists", "activated", "selected", "name", "volumeStr", "volume", "panStr", "pan", "vu", "mute", "solo", "sends" ];
 OSCWriter.FXPARAM_ATTRIBS = [ "name", "valueStr", "value" ];
 OSCWriter.EMPTY_TRACK =
 {
@@ -67,6 +68,8 @@ OSCWriter.prototype.flush = function (dump)
     this.sendOSC ('/overdub', trans.isOverdub, dump);
     this.sendOSC ('/overdub/launcher', trans.isLauncherOverdub, dump);
     this.sendOSC ('/repeat', trans.isLooping, dump);
+    this.sendOSC ('/punchIn', trans.punchIn, dump);
+    this.sendOSC ('/punchOut', trans.punchOut, dump);
     this.sendOSC ('/click', trans.isClickOn, dump);
     this.sendOSC ('/preroll', trans.getPreroll (), dump);
     this.sendOSC ('/tempo/raw', trans.getTempo (), dump);
@@ -74,11 +77,12 @@ OSCWriter.prototype.flush = function (dump)
     this.sendOSC ('/autowrite', trans.isWritingArrangerAutomation, dump);
     this.sendOSC ('/autowrite/launcher', trans.isWritingClipLauncherAutomation, dump);
     this.sendOSC ('/automationWriteMode', trans.automationWriteMode, dump);
+    this.sendOSC ('/position', trans.getPositionText ());
 
     //
     // Frames
     //
-    
+
     var app = this.model.getApplication ();
     this.sendOSC ('/layout', app.getPanelLayout ().toLowerCase (), dump);
 
@@ -102,58 +106,40 @@ OSCWriter.prototype.flush = function (dump)
     //
     // Master-/Track(-commands)
     //
-    
-	var trackBank = this.model.getCurrentTrackBank ();
-	for (var i = 0; i < trackBank.numTracks; i++)
+
+    var trackBank = this.model.getTrackBank ();
+    for (var i = 0; i < trackBank.numTracks; i++)
         this.flushTrack ('/track/' + (i + 1) + '/', trackBank.getTrack (i), dump);
     this.flushTrack ('/master/', this.model.getMasterTrack (), dump);
     var selectedTrack = trackBank.getSelectedTrack ();
     if (selectedTrack == null)
         selectedTrack = OSCWriter.EMPTY_TRACK;
     this.flushTrack ('/track/selected/', selectedTrack, dump);
-    
+    this.flushSendNames ('/send/', dump);
+
     //
-    // Device
+    // Scenes
     //
 
+    var sceneBank = this.model.getSceneBank ();
+    for (var i = 0; i < sceneBank.numScenes; i++)
+        this.flushScene ('/scene/' + (i + 1) + '/', sceneBank.getScene (i), dump);
+
+    //
+    // Device / Primary Device
+    //
     var cd = this.model.getCursorDevice ();
-    var selDevice = cd.getSelectedDevice ();
-    this.sendOSC ('/device/name', selDevice.name, dump);
-    this.sendOSC ('/device/bypass', !selDevice.enabled, dump);
-	for (var i = 0; i < cd.numParams; i++)
-    {
-        var oneplus = i + 1;
-        this.flushFX ('/device/param/' + oneplus + '/', cd.getFXParam (i), dump);
-        this.flushFX ('/device/common/' + oneplus + '/', cd.getCommonParam (i), dump);
-        this.flushFX ('/device/envelope/' + oneplus + '/', cd.getEnvelopeParam (i), dump);
-        this.flushFX ('/device/macro/' + oneplus + '/', cd.getMacroParam (i), dump);
-        this.flushFX ('/device/modulation/' + oneplus + '/', cd.getModulationParam (i), dump);
-    }
-    this.sendOSC ('/device/category', cd.categoryProvider.selectedItemVerbose, dump);
-    this.sendOSC ('/device/creator', cd.creatorProvider.selectedItemVerbose, dump);
-    this.sendOSC ('/device/preset', cd.presetProvider.selectedItemVerbose, dump);
+    this.flushDevice ('/device/', cd, dump);
+    for (var i = 0; i < cd.numDeviceLayers; i++)
+        this.flushDeviceLayers ('/device/layer/' + (i + 1) + '/', cd.getLayerOrDrumPad (i), dump);
+    this.flushDevice ('/primary/', trackBank.primaryDevice, dump);
 
     //
-    // Primary Device
+    // Browser
     //
 
-    cd = trackBank.primaryDevice;
-    var selDevice = cd.getSelectedDevice ();
-    this.sendOSC ('/primary/name', selDevice.name, dump);
-    this.sendOSC ('/primary/bypass', !selDevice.enabled, dump);
-	for (var i = 0; i < cd.numParams; i++)
-    {
-        var oneplus = i + 1;
-        this.flushFX ('/primary/param/' + oneplus + '/', cd.getFXParam (i), dump);
-        this.flushFX ('/primary/common/' + oneplus + '/', cd.getCommonParam (i), dump);
-        this.flushFX ('/primary/envelope/' + oneplus + '/', cd.getEnvelopeParam (i), dump);
-        this.flushFX ('/primary/macro/' + oneplus + '/', cd.getMacroParam (i), dump);
-        this.flushFX ('/primary/modulation/' + oneplus + '/', cd.getModulationParam (i), dump);
-    }
-    this.sendOSC ('/primary/category', cd.categoryProvider.selectedItemVerbose, dump);
-    this.sendOSC ('/primary/creator', cd.creatorProvider.selectedItemVerbose, dump);
-    this.sendOSC ('/primary/preset', cd.presetProvider.selectedItemVerbose, dump);
-    
+    this.flushBrowser ('/browser/', this.model.getBrowser (), dump);
+
     //
     // User
     //
@@ -185,18 +171,18 @@ OSCWriter.prototype.flushTrack = function (trackAddress, track, dump)
             case 'sends':
                 if (!track.sends)
                     continue;
-                for (var j = 0; j < 8; j++)
+                for (var j = 0; j < this.model.numSends; j++)
                 {
                     var s = track.sends[j];
                     for (var q in s)
                         this.sendOSC (trackAddress + 'send/' + (j + 1) + '/' + q, s[q], dump);
                 }
                 break;
-                
+
             case 'slots':
                 if (!track.slots)
                     continue;
-                for (var j = 0; j < 8; j++)
+                for (var j = 0; j < this.model.numScenes; j++)
                 {
                     var s = track.slots[j];
                     for (var q in s)
@@ -216,29 +202,129 @@ OSCWriter.prototype.flushTrack = function (trackAddress, track, dump)
                     }
                 }
                 break;
-                
+
             case 'color':
                 var color = AbstractTrackBankProxy.getColorEntry (track[p]);
                 if (color)
                     this.sendOSCColor (trackAddress + p, color[0], color[1], color[2], dump);
                 break;
-                
+
             case 'crossfadeMode':
                 this.sendOSC (trackAddress + p + '/A', track[p] == 'A', dump);
                 this.sendOSC (trackAddress + p + '/B', track[p] == 'B', dump);
                 this.sendOSC (trackAddress + p + '/AB', track[p] == 'AB', dump);
                 break;
-                
+
             case 'vu':
                 if (Config.enableVUMeters)
                     this.sendOSC (trackAddress + p, track[p], dump);
                 break;
-                
+
             default:
                 this.sendOSC (trackAddress + p, track[p], dump);
                 break;
         }
-	}
+    }
+};
+
+OSCWriter.prototype.flushSendNames = function (sendAddress, dump)
+{
+    var fxTrackBank = this.model.getEffectTrackBank ();
+    var isFX = this.model.getCurrentTrackBank () === fxTrackBank;
+    for (var i = 0; i < this.model.numSends; i++)
+    {
+        var fxTrack = fxTrackBank.getTrack (i);
+        var isEmpty = isFX || !fxTrack.exists;
+        this.sendOSC (sendAddress + (i + 1) + '/name', isEmpty ? "" : fxTrack.name, dump);
+    }
+};
+
+OSCWriter.prototype.flushScene = function (sceneAddress, scene, dump)
+{
+    this.sendOSC (sceneAddress + 'exists', scene.exists, dump);
+    this.sendOSC (sceneAddress + 'name', scene.name, dump);
+    this.sendOSC (sceneAddress + 'selected', scene.selected, dump);
+};
+
+OSCWriter.prototype.flushDevice = function (deviceAddress, device, dump)
+{
+    var selDevice = device.getSelectedDevice ();
+    this.sendOSC (deviceAddress + 'name', selDevice.name, dump);
+    this.sendOSC (deviceAddress + 'bypass', !selDevice.enabled, dump);
+    for (var i = 0; i < device.numParams; i++)
+    {
+        var oneplus = i + 1;
+        this.flushFX (deviceAddress + 'param/' + oneplus + '/', device.getFXParam (i), dump);
+        this.flushFX (deviceAddress + 'common/' + oneplus + '/', device.getCommonParam (i), dump);
+        this.flushFX (deviceAddress + 'envelope/' + oneplus + '/', device.getEnvelopeParam (i), dump);
+        this.flushFX (deviceAddress + 'macro/' + oneplus + '/', device.getMacroParam (i), dump);
+        this.flushFX (deviceAddress + 'modulation/' + oneplus + '/', device.getModulationParam (i), dump);
+    }
+};
+
+OSCWriter.prototype.flushBrowser = function (browserAddress, browser, dump)
+{
+    var session = browser.getActiveSession ();
+    this.sendOSC (browserAddress + 'isActive', session != null, dump);
+    if (session == null)
+        return;
+
+    // Filter Columns
+    for (var i = 0; i < session.numFilterColumns; i++)
+    {
+        var filterAddress = browserAddress + 'filter/' + (i + 1) + '/';
+        var column = session.getFilterColumn (i);
+        this.sendOSC (filterAddress + 'exists', column.exists, dump);
+        this.sendOSC (filterAddress + 'name', column.name, dump);
+        for (var j = 0; j < session.numFilterColumnEntries; j++)
+        {
+            this.sendOSC (filterAddress + 'item/' + (j + 1) + '/exists', column.items[j].exists, dump);
+            this.sendOSC (filterAddress + 'item/' + (j + 1) + '/name', column.items[j].name, dump);
+            this.sendOSC (filterAddress + 'item/' + (j + 1) + '/hits', column.items[j].hits, dump);
+            this.sendOSC (filterAddress + 'item/' + (j + 1) + '/isSelected', column.items[j].isSelected, dump);
+        }
+    }
+
+    // Presets
+    var presetAddress = browserAddress + 'preset/';
+    column = session.getResultColumn ();
+    for (var i = 0; i < session.numResults; i++)
+    {
+        this.sendOSC (presetAddress + (i + 1) + '/exists', column[i].exists, dump);
+        this.sendOSC (presetAddress + (i + 1) + '/name', column[i].name, dump);
+        this.sendOSC (presetAddress + (i + 1) + '/hits', column[i].hits, dump);
+        this.sendOSC (presetAddress + (i + 1) + '/isSelected', column[i].isSelected, dump);
+    }
+};
+
+OSCWriter.prototype.flushDeviceLayers = function (deviceAddress, device, dump)
+{
+    for (var a = 0; a < OSCWriter.DEVICE_LAYER_ATTRIBS.length; a++)
+    {
+        var p = OSCWriter.DEVICE_LAYER_ATTRIBS[a];
+        switch (p)
+        {
+            case 'sends':
+                if (!device.sends)
+                    continue;
+                for (var j = 0; j < this.model.numSends; j++)
+                {
+                    var s = device.sends[j];
+                    for (var q in s)
+                        this.sendOSC (deviceAddress + 'send/' + (j + 1) + '/' + q, s[q], dump);
+                }
+                break;
+
+            case 'vu':
+                if (Config.enableVUMeters)
+                    this.sendOSC (deviceAddress + p, device[p], dump);
+                break;
+
+            default:
+                this.sendOSC (deviceAddress + p, device[p], dump);
+                break;
+        }
+    }
 };
 
 OSCWriter.prototype.flushFX = function (fxAddress, fxParam, dump)
@@ -250,7 +336,7 @@ OSCWriter.prototype.flushFX = function (fxAddress, fxParam, dump)
 	}
 };
 
-OSCWriter.prototype.flushNotes = function (dump)
+OSCWriter.prototype.flushNotes = function (noteAddress, dump)
 {
     var isKeyboardEnabled = this.canSelectedTrackHoldNotes ();
     var isRecording = this.model.hasRecordingState ();
@@ -259,9 +345,9 @@ OSCWriter.prototype.flushNotes = function (dump)
     {
         var color = isKeyboardEnabled ? (this.model.pressedKeys[i] > 0 ?
             (isRecording ? OSCWriter.NOTE_STATE_COLOR_REC : OSCWriter.NOTE_STATE_COLOR_ON) :
-            OSCWriter.NOTE_STATE_COLORS[scales.getColor (this.model.keysTranslation, i)]) : 
+            OSCWriter.NOTE_STATE_COLORS[scales.getColor (this.model.keysTranslation, i)]) :
             OSCWriter.NOTE_STATE_COLOR_OFF;
-        this.sendOSCColor ('/vkb_midi/note/' + i + '/color', color[0], color[1], color[2], dump);
+        this.sendOSCColor (noteAddress + i + '/color', color[0], color[1], color[2], dump);
     }
 };
 
@@ -283,7 +369,7 @@ OSCWriter.prototype.sendOSC = function (address, value, dump)
         else if (this.oldValues[address] === value)
             return;
     }
-    
+
     this.oldValues[address] = value;
 
     // Convert boolean values to integer for client compatibility

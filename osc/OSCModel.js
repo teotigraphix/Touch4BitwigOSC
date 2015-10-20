@@ -5,6 +5,12 @@
 OSCModel.prototype.keysTranslation = null;
 OSCModel.prototype.drumsTranslation = null;
 
+BrowserSessionProxy.prototype.handleIsActive = function (active)
+{
+    this.isActive = active;
+    println("B active " + active);
+};
+
 function OSCModel (scales)
 {
     if (scales == null)
@@ -26,31 +32,6 @@ function OSCModel (scales)
     var numDrumPadLayers = 16;
 
     //--------------------------------------------------------------------------
-
-    //this.numTracks = numTracks ? numTracks : 8;
-    //this.numScenes = numScenes ? numScenes : 8;
-    //this.numSends  = numSends  ? numSends  : 6;
-    //
-    //this.application = new ApplicationProxy ();
-    //
-    //this.addApplicationExtras (this.application.application);
-    //this.currentProjectName = "";
-    //
-    //this.transport = new TransportProxy ();
-    //this.groove = new GrooveProxy ();
-    //this.masterTrack = new MasterTrackProxy ();
-    //this.trackBank = new TrackBankProxy (this.numTracks, this.numScenes, this.numSends);
-    //this.effectTrackBank = new EffectTrackBankProxy (this.numTracks, this.numScenes, this.trackBank);
-    //this.userControlBank = new UserControlBankProxy (userCCStart);
-    //
-    //this.cursorDevice = new CursorDeviceProxy (host.createEditorCursorDevice (this.numSends), this.numSends);
-    //this.arranger = new ArrangerProxy ();
-    //this.mixer = new MixerProxy ();
-    //this.sceneBank = new SceneBankProxy (this.numScenes);
-    //
-    //// this.browser = new BrowserProxy (this.cursorDevice);
-    //
-    //this.currentTrackBank = this.trackBank;
 
     this.numTracks              = numTracks ? numTracks : 8;
     this.numScenes              = numScenes ? numScenes : 8;

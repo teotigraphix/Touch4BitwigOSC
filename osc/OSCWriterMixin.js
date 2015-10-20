@@ -1,11 +1,13 @@
 
-OSCWriter.TRACK_ATTRIBS = [
-    "exists", "activated", "selected", "name",
-    "volumeStr", "volume", "panStr", "pan", "color",
-    "vu", "mute", "solo", "recarm", "monitor", "autoMonitor",
-    "canHoldNotes", "sends", "slots", "crossfadeMode" ];
+OSCWriter.TRACK_ATTRIBS = [ "exists", "activated", "selected", "isGroup", "name",
+    "volumeStr", "volume", "panStr", "pan", "color", "vu", "mute", "solo", "recarm",
+    "monitor", "autoMonitor", "canHoldNotes", "sends", "slots", "crossfadeMode" ];
+
+OSCWriter.DEVICE_LAYER_ATTRIBS = [ "exists", "activated", "selected", "name",
+    "volumeStr", "volume", "panStr", "pan", "vu", "mute", "solo", "sends" ];
 
 OSCWriter.FXPARAM_ATTRIBS = [ "name", "valueStr", "value" ];
+
 OSCWriter.EMPTY_TRACK =
 {
     exists: false,
@@ -40,9 +42,19 @@ OSCWriter.prototype.flush = function (dump)
     this.flushMasterTrack (dump);
     this.flushTracks (dump);
     this.flushSelectedTrack (dump);
+    this.flushSends (dump);
 
-    this.flushDevice (dump);
-    this.flushPrimaryDevice (dump);
+    this.flushScenes (dump);
+
+    this.flushDevices (dump);
+    this.flushBrowser ('/browser/', this.model.getBrowser (), dump);
+
+    //var session = this.model.getBrowser ().getActiveSession ();
+    //if (session != null)
+    //{
+    //    this.sendOSC ('/browserComplete', true, true);
+    //}
+
     this.flushUserDevice (dump);
 
     if (Config.enableKeyboard)
@@ -61,23 +73,67 @@ OSCWriter.prototype.flush = function (dump)
     host.sendDatagramPacket (Config.sendHost, Config.sendPort, data);
 };
 
+// TEMP
+
+OSCWriter.prototype.flushBrowser = function (browserAddress, browser, dump)
+{
+    var session = browser.getActiveSession ();
+
+    if (session == null)
+    {
+        this.sendOSC (browserAddress + 'isActive', false, dump);
+        return;
+    }
+
+    this.sendOSC (browserAddress + 'isActive', true, dump);
+
+    // Filter Columns
+    for (var i = 0; i < session.numFilterColumns; i++)
+    {
+        var filterAddress = browserAddress + 'filter/' + (i + 1) + '/';
+        var column = session.getFilterColumn (i);
+        this.sendOSC (filterAddress + 'exists', column.exists, dump);
+        this.sendOSC (filterAddress + 'name', column.name, dump);
+        for (var j = 0; j < session.numFilterColumnEntries; j++)
+        {
+            this.sendOSC (filterAddress + 'item/' + (j + 1) + '/exists', column.items[j].exists, dump);
+            this.sendOSC (filterAddress + 'item/' + (j + 1) + '/name', column.items[j].name, dump);
+            this.sendOSC (filterAddress + 'item/' + (j + 1) + '/hits', column.items[j].hits, dump);
+            this.sendOSC (filterAddress + 'item/' + (j + 1) + '/isSelected', column.items[j].isSelected, dump);
+        }
+    }
+
+    // Presets
+    var presetAddress = browserAddress + 'preset/';
+    column = session.getResultColumn ();
+    for (var i = 0; i < session.numResults; i++)
+    {
+        this.sendOSC (presetAddress + (i + 1) + '/exists', column[i].exists, dump);
+        this.sendOSC (presetAddress + (i + 1) + '/name', column[i].name, dump);
+        this.sendOSC (presetAddress + (i + 1) + '/hits', column[i].hits, dump);
+        this.sendOSC (presetAddress + (i + 1) + '/isSelected', column[i].isSelected, dump);
+    }
+
+    this.sendOSC ('/browserComplete', true, dump);
+};
+
+//--------------------------------------
+// Transport
+//--------------------------------------
+
+//OSCWriter.prototype.super_flushTransport = OSCWriter.prototype.flushTransport;
+
 OSCWriter.prototype.flushTransport = function (dump)
 {
+    //OSCParser.prototype.super_flushTransport.call(this, msg);
     var trans = this.model.getTransport ();
-
-    this.sendOSC ('/position', trans.getPositionText(), dump);
-    this.sendOSC ('/numerator', trans.getNumerator(), dump);
-    this.sendOSC ('/denominator', trans.getDenominator(), dump);
-    this.sendOSC ('/automationOverride', trans.isAutomationOverride, dump);
-
-    //----------------------------------
-    // original
-    //----------------------------------
     this.sendOSC ('/play', trans.isPlaying, dump);
     this.sendOSC ('/record', trans.isRecording, dump);
     this.sendOSC ('/overdub', trans.isOverdub, dump);
     this.sendOSC ('/overdub/launcher', trans.isLauncherOverdub, dump);
     this.sendOSC ('/repeat', trans.isLooping, dump);
+    this.sendOSC ('/punchIn', trans.punchIn, dump);
+    this.sendOSC ('/punchOut', trans.punchOut, dump);
     this.sendOSC ('/click', trans.isClickOn, dump);
     this.sendOSC ('/preroll', trans.getPreroll (), dump);
     this.sendOSC ('/tempo/raw', trans.getTempo (), dump);
@@ -85,18 +141,32 @@ OSCWriter.prototype.flushTransport = function (dump)
     this.sendOSC ('/autowrite', trans.isWritingArrangerAutomation, dump);
     this.sendOSC ('/autowrite/launcher', trans.isWritingClipLauncherAutomation, dump);
     this.sendOSC ('/automationWriteMode', trans.automationWriteMode, dump);
+    this.sendOSC ('/position', trans.getPositionText ());
+
+    // Added
+
+    this.sendOSC ('/numerator', trans.getNumerator(), dump);
+    this.sendOSC ('/denominator', trans.getDenominator(), dump);
+    this.sendOSC ('/automationOverride', trans.isAutomationOverride, dump);
 };
+
+//--------------------------------------
+// Application
+//--------------------------------------
 
 OSCWriter.prototype.flushApplication = function (dump)
 {
     var app = this.model.getApplication ();
-    this.sendOSC ('/active', app.isEngineActive(), dump);
-
-    //----------------------------------
-    // original
-    //----------------------------------
     this.sendOSC ('/layout', app.getPanelLayout ().toLowerCase (), dump);
+
+    // Added
+
+    this.sendOSC ('/active', app.isEngineActive(), dump);
 };
+
+//--------------------------------------
+// Arranger
+//--------------------------------------
 
 OSCWriter.prototype.flushArranger = function (dump)
 {
@@ -110,6 +180,10 @@ OSCWriter.prototype.flushArranger = function (dump)
     this.sendOSC ('/arranger/effectTracksVisibility', arrange.areEffectTracksVisible (), dump);
 };
 
+//--------------------------------------
+// Mixer
+//--------------------------------------
+
 OSCWriter.prototype.flushMixer = function (dump)
 {
     var mix = this.model.getMixer ();
@@ -121,24 +195,35 @@ OSCWriter.prototype.flushMixer = function (dump)
     this.sendOSC ('/mixer/meterSectionVisibility', mix.isMeterSectionVisible (), dump);
 };
 
+//--------------------------------------
+// MasterTrack
+//--------------------------------------
+
 OSCWriter.prototype.flushMasterTrack = function (dump)
 {
     this.flushTrack ('/master/', this.model.getMasterTrack (), dump);
 };
 
+//--------------------------------------
+// Track
+//--------------------------------------
+
 OSCWriter.prototype.flushTracks = function (dump)
 {
     var trackBank = this.model.getCurrentTrackBank ();
 
-    this.sendOSC('/track/canScrollTracksUp', trackBank.canScrollTracksUp(), dump);
-    this.sendOSC('/track/canScrollTracksDown', trackBank.canScrollTracksDown(), dump);
-
-    //----------------------------------
-    // original
-    //----------------------------------
     for (var i = 0; i < trackBank.numTracks; i++)
         this.flushTrack ('/track/' + (i + 1) + '/', trackBank.getTrack (i), dump);
+
+    // Added
+
+    this.sendOSC('/track/canScrollTracksUp', trackBank.canScrollTracksUp(), dump);
+    this.sendOSC('/track/canScrollTracksDown', trackBank.canScrollTracksDown(), dump);
 };
+
+//--------------------------------------
+// SelectedTrack
+//--------------------------------------
 
 OSCWriter.prototype.flushSelectedTrack = function (dump)
 {
@@ -149,10 +234,43 @@ OSCWriter.prototype.flushSelectedTrack = function (dump)
     this.flushTrack ('/track/selected/', selectedTrack, dump);
 };
 
-OSCWriter.prototype.flushDevice = function (dump)
+//--------------------------------------
+// TrackSends
+//--------------------------------------
+
+OSCWriter.prototype.flushSends = function (dump)
+{
+    this.flushSendNames ('/send/', dump);
+};
+
+//--------------------------------------
+// Scenes
+//--------------------------------------
+
+OSCWriter.prototype.flushScenes = function (dump)
+{
+    var sceneBank = this.model.getSceneBank ();
+    for (var i = 0; i < sceneBank.numScenes; i++)
+        this.flushScene ('/scene/' + (i + 1) + '/', sceneBank.getScene (i), dump);
+};
+
+//--------------------------------------
+// Device
+//--------------------------------------
+
+OSCWriter.prototype.flushDevices = function (dump)
 {
     var cd = this.model.getCursorDevice ();
-    var selDevice = cd.getSelectedDevice ();
+    var trackBank = this.model.getTrackBank ();
+    //var selDevice = cd.getSelectedDevice ();
+
+    var cd = this.model.getCursorDevice ();
+    this.flushDevice ('/device/', cd, dump);
+    for (var i = 0; i < cd.numDeviceLayers; i++)
+        this.flushDeviceLayers ('/device/layer/' + (i + 1) + '/', cd.getLayerOrDrumPad (i), dump);
+    this.flushDevice ('/primary/', trackBank.primaryDevice, dump);
+
+    // Added
 
     this.sendOSC('/device/expand', cd.isExpanded(), dump);
     this.sendOSC('/device/window', cd.isWindowOpen(), dump);
@@ -181,44 +299,6 @@ OSCWriter.prototype.flushDevice = function (dump)
     var name = cd.getSelectedParameterPageName();
     if (name != null && name != "")
         this.sendOSC('/device/param/selectedPageName', cd.getSelectedParameterPageName(), dump);
-
-    //----------------------------------
-    // original
-    //----------------------------------
-    this.sendOSC ('/device/name', selDevice.name, dump);
-    this.sendOSC ('/device/bypass', !selDevice.enabled, dump);
-    for (var i = 0; i < cd.numParams; i++)
-    {
-        var oneplus = i + 1;
-        this.flushFX ('/device/param/' + oneplus + '/', cd.getFXParam (i), dump);
-        this.flushFX ('/device/common/' + oneplus + '/', cd.getCommonParam (i), dump);
-        this.flushFX ('/device/envelope/' + oneplus + '/', cd.getEnvelopeParam (i), dump);
-        this.flushFX ('/device/macro/' + oneplus + '/', cd.getMacroParam (i), dump);
-        this.flushFX ('/device/modulation/' + oneplus + '/', cd.getModulationParam (i), dump);
-    }
-    //this.sendOSC ('/device/category', cd.categoryProvider.selectedItemVerbose, dump);
-    //this.sendOSC ('/device/creator', cd.creatorProvider.selectedItemVerbose, dump);
-    //this.sendOSC ('/device/preset', cd.presetProvider.selectedItemVerbose, dump);
-};
-
-OSCWriter.prototype.flushPrimaryDevice = function (dump)
-{
-    var cd = this.model.getCursorDevice ();
-    var selDevice = cd.getSelectedDevice ();
-    this.sendOSC ('/primary/name', selDevice.name, dump);
-    this.sendOSC ('/primary/bypass', !selDevice.enabled, dump);
-    for (var i = 0; i < cd.numParams; i++)
-    {
-        var oneplus = i + 1;
-        this.flushFX ('/primary/param/' + oneplus + '/', cd.getFXParam (i), dump);
-        this.flushFX ('/primary/common/' + oneplus + '/', cd.getCommonParam (i), dump);
-        this.flushFX ('/primary/envelope/' + oneplus + '/', cd.getEnvelopeParam (i), dump);
-        this.flushFX ('/primary/macro/' + oneplus + '/', cd.getMacroParam (i), dump);
-        this.flushFX ('/primary/modulation/' + oneplus + '/', cd.getModulationParam (i), dump);
-    }
-    //this.sendOSC ('/primary/category', cd.categoryProvider.selectedItemVerbose, dump);
-    //this.sendOSC ('/primary/creator', cd.creatorProvider.selectedItemVerbose, dump);
-    //this.sendOSC ('/primary/preset', cd.presetProvider.selectedItemVerbose, dump);
 };
 
 OSCWriter.prototype.flushUserDevice = function (dump)
