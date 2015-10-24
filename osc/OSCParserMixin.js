@@ -34,8 +34,17 @@ OSCParser.prototype.parse = function (msg)
             }
             break;
 
+        //------------------------------
+        // Transport
+        //------------------------------
+
         case 'automationOverride':
             this.transport.resetAutomationOverrides ();
+            break;
+
+        case 'timeSignature':
+            // TODO add to TransportProxy
+            this.transport.transport.getTimeSignature ().set (value);
             break;
 
         default:
