@@ -221,7 +221,11 @@ TransportProxy.prototype.toggleWriteClipLauncherAutomation = function ()
 TransportProxy.prototype.stopAndRewind = function ()
 {
     this.transport.stop ();
-    this.transport.setPosition (0);
+    // Delay the position movement to make sure that the playback is really stopped
+    scheduleTask (doObject (this, function ()
+    {
+        this.transport.setPosition (0);
+    }), null, 100);
 };
 
 TransportProxy.prototype.changePosition = function (increase, slow)
@@ -376,8 +380,8 @@ TransportProxy.prototype.handleIsWritingClipLauncherAutomation = function (isAut
 
 TransportProxy.prototype.handleMetronomeVolume = function (volume)
 {
-    // volume is in the range of -48.0 to 0.0, scale to 0 to 127
-    this.metroVolume = Math.round ((48.0 + volume) * 127 / 48.0);
+    // volume is in the range of -48.0 to 0.0, scale to 0 to Config.maxParameterValue - 1
+    this.metroVolume = Math.round ((48.0 + volume) * (Config.maxParameterValue - 1) / 48.0);
 };
 
 TransportProxy.prototype.handlePreRoll = function (prerollValue)
