@@ -33,7 +33,6 @@ OSCWriter.EMPTY_TRACK =
 
 OSCWriter.prototype.flush = function (dump)
 {
-    //println("OSCWriter.prototype.flush() Mixed");
     this.flushTransport (dump);
     this.flushApplication (dump);
     this.flushArranger (dump);
@@ -66,10 +65,14 @@ OSCWriter.prototype.flush = function (dump)
     if (this.messages.length == 0)
         return;
 
-    this.sendOSC ('/flushComplete', true, dump);
-    this.sendOSC ('/project/name', this.model.currentProjectName, dump);
+    //~~this.sendOSC ('/project/name', this.model.currentProjectName, dump);
 
     var data = new OSCMessage ().buildBundle (this.messages);
+    host.sendDatagramPacket (Config.sendHost, Config.sendPort, data);
+
+    this.oldValues['/flushComplete'] = undefined;
+    this.sendOSC ('/flushComplete', true, dump);
+    data = new OSCMessage ().buildBundle (this.messages);
     host.sendDatagramPacket (Config.sendHost, Config.sendPort, data);
 };
 
@@ -231,7 +234,7 @@ OSCWriter.prototype.flushSelectedTrack = function (dump)
     var selectedTrack = trackBank.getSelectedTrack ();
     if (selectedTrack == null)
         selectedTrack = OSCWriter.EMPTY_TRACK;
-    this.flushTrack ('/track/selected/', selectedTrack, dump);
+   // this.flushTrack ('/track/selected/', selectedTrack, dump);
 };
 
 //--------------------------------------

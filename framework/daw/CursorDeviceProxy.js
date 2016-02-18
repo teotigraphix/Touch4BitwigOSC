@@ -1,6 +1,6 @@
 // Written by Jürgen Moßgraber - mossgrabers.de
 //            Michael Schmalle - teotigraphix.com
-// (c) 2014-2015
+// (c) 2014-2016
 // Licensed under LGPLv3 - http://www.gnu.org/licenses/lgpl-3.0.txt
 
 function CursorDeviceProxy (cursorDevice, numSends, numParams, numDevicesInBank, numDeviceLayers, numDrumPadLayers)
@@ -154,6 +154,7 @@ function CursorDeviceProxy (cursorDevice, numSends, numParams, numDevicesInBank,
         layer.addVuMeterObserver (Config.maxParameterValue, -1, true, doObjectIndex (this, i, CursorDeviceProxy.prototype.handleLayerVUMeters));
         layer.getMute ().addValueObserver (doObjectIndex (this, i, CursorDeviceProxy.prototype.handleLayerMute));
         layer.getSolo ().addValueObserver (doObjectIndex (this, i, CursorDeviceProxy.prototype.handleLayerSolo));
+        layer.addColorObserver (doObjectIndex (this, i, CursorDeviceProxy.prototype.handleLayerColor));
         // Sends values & texts
         for (j = 0; j < this.numSends; j++)
         {
@@ -652,6 +653,12 @@ CursorDeviceProxy.prototype.setLayerOrDrumPadSolo = function (index, value)
         this.setLayerSolo (index, value);
 };
 
+CursorDeviceProxy.prototype.getLayerOrDrumPadColorEntry = function (index)
+{
+    var layer = this.getLayerOrDrumPad (index);
+    return AbstractTrackBankProxy.getColorEntry (layer.color);
+};
+
 //--------------------------------------
 // Layers
 //--------------------------------------
@@ -659,6 +666,15 @@ CursorDeviceProxy.prototype.setLayerOrDrumPadSolo = function (index, value)
 CursorDeviceProxy.prototype.hasLayers = function ()
 {
     return this.hasLayersValue;
+};
+
+// The device can have layers but none exist
+CursorDeviceProxy.prototype.hasZeroLayers = function ()
+{
+    for (var i = 0; i < this.numDeviceLayers; i++)
+        if (this.deviceLayers[i].exists)
+            return false;
+    return true;
 };
 
 CursorDeviceProxy.prototype.getLayer = function (index)
@@ -1030,14 +1046,14 @@ CursorDeviceProxy.prototype.selectFirstDeviceInDrumPad = function (index)
 
 CursorDeviceProxy.prototype.canScrollDrumPadsUp = function ()
 {
-    // TODO API extension required
-    return true;
+    // TODO API extension required, use the layer info instead which works too
+    return this.canScrollLayersUp ();
 };
 
 CursorDeviceProxy.prototype.canScrollDrumPadsDown = function ()
 {
-    // TODO API extension required
-    return true;
+    // TODO API extension required, use the layer info instead which works too
+    return this.canScrollLayersDown ();
 };
 
 CursorDeviceProxy.prototype.scrollDrumPadsPageUp = function ()
@@ -1430,6 +1446,11 @@ CursorDeviceProxy.prototype.handleLayerSolo = function (index, isSoloed)
     this.deviceLayers[index].solo = isSoloed;
 };
 
+CursorDeviceProxy.prototype.handleLayerColor = function (index, red, green, blue)
+{
+    this.deviceLayers[index].color = AbstractTrackBankProxy.getColorIndex (red, green, blue);
+};
+
 CursorDeviceProxy.prototype.handleLayerSendName = function (index, index2, text)
 {
     this.deviceLayers[index].sends[index2].name = text;
@@ -1569,6 +1590,7 @@ CursorDeviceProxy.prototype.createDeviceLayers = function (count)
             vu: 0,
             mute: false,
             solo: false,
+            color: 0,
             sends: []
         };
         for (var j = 0; j < this.numSends; j++)

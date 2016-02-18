@@ -1,6 +1,6 @@
 // Written by Jürgen Moßgraber - mossgrabers.de
 //            Michael Schmalle - teotigraphix.com
-// (c) 2014-2015
+// (c) 2014-2016
 // Licensed under LGPLv3 - http://www.gnu.org/licenses/lgpl-3.0.txt
 
 function ApplicationProxy ()
@@ -195,6 +195,22 @@ ApplicationProxy.prototype.quantize = function ()
 {
     // TODO API extension required
     // Clip must already be visible in editor and the editor must be focused
+    
+    var tb = controller.model.getCurrentTrackBank ();
+    var selTrack = tb.getSelectedTrack ();
+    if (selTrack == null)
+        return;
+    
+    var slot = tb.getSelectedSlot (selTrack.index);
+    if (slot == null)
+        return;
+
+    var slots = tb.getClipLauncherSlots (selTrack.index);
+    slots.showInEditor (slot.index);
+    
+    this.toggleDevices ();    
+    this.toggleNoteEditor ();    
+    
     this.application.getAction ("Select All").invoke ();
     this.application.getAction ("Quantize").invoke ();
 };

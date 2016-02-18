@@ -1,6 +1,6 @@
 // Written by Jürgen Moßgraber - mossgrabers.de
 //            Michael Schmalle - teotigraphix.com
-// (c) 2014-2015
+// (c) 2014-2016
 // Licensed under LGPLv3 - http://www.gnu.org/licenses/lgpl-3.0.txt
 
 AbstractTrackBankProxy.COLORS =
@@ -122,6 +122,7 @@ AbstractTrackBankProxy.prototype.init = function ()
         t.getAutoMonitor ().addValueObserver (doObjectIndex (this, i, AbstractTrackBankProxy.prototype.handleAutoMonitor));
         t.getCrossFadeMode ().addValueObserver (doObjectIndex (this, i, AbstractTrackBankProxy.prototype.handleCrossfadeMode));
         t.getCanHoldNoteData ().addValueObserver (doObjectIndex (this, i, AbstractTrackBankProxy.prototype.handleCanHoldNotes));
+        t.getCanHoldAudioData ().addValueObserver (doObjectIndex (this, i, AbstractTrackBankProxy.prototype.handleCanHoldAudioData));
 
         // Slot content changes
         var cs = t.getClipLauncherSlots ();
@@ -140,14 +141,14 @@ AbstractTrackBankProxy.prototype.init = function ()
     this.trackBank.addChannelCountObserver (doObject (this, AbstractTrackBankProxy.prototype.handleChannelCount));
 };
 
-AbstractTrackBankProxy.prototype.isMuteState = function ()
-{
-    return this.trackState == TrackState.MUTE;
-};
-
 AbstractTrackBankProxy.prototype.getTrackCount = function ()
 {
     return this.trackCount;
+};
+
+AbstractTrackBankProxy.prototype.isMuteState = function ()
+{
+    return this.trackState == TrackState.MUTE;
 };
 
 AbstractTrackBankProxy.prototype.isSoloState = function ()
@@ -200,6 +201,12 @@ AbstractTrackBankProxy.prototype.getSelectedTrack = function ()
     return null;
 };
 
+AbstractTrackBankProxy.prototype.getSelectedTrackColorEntry = function ()
+{
+    var selectedTrack = this.getSelectedTrack ();
+    return selectedTrack == null ? 0 : AbstractTrackBankProxy.getColorEntry (selectedTrack.color);
+};
+
 AbstractTrackBankProxy.prototype.select = function (index)
 {
     var t = this.trackBank.getChannel (index);
@@ -243,7 +250,7 @@ AbstractTrackBankProxy.prototype.changePan = function (index, value, fractionVal
     this.trackBank.getChannel (t.index).getPan ().set (t.pan, Config.maxParameterValue);
 };
 
-AbstractTrackBankProxy.prototype.setPan = function (index, value, fractionValue)
+AbstractTrackBankProxy.prototype.setPan = function (index, value)
 {
     var t = this.getTrack (index);
     t.pan = value;
@@ -490,7 +497,7 @@ AbstractTrackBankProxy.prototype.createClip = function (trackIndex, slotIndex, q
 {
     var newCLipLength = this.getNewClipLength ();
     var beats = newCLipLength < 2 ? 
-                    Math.pow (2, tb.getNewClipLength ()) :
+                    Math.pow (2, newCLipLength) :
                     Math.pow (2, (newCLipLength - 2)) * quartersPerMeasure;
     this.getClipLauncherSlots (trackIndex).createEmptyClip (slotIndex, beats);
 };
@@ -508,6 +515,12 @@ AbstractTrackBankProxy.prototype.showClipInEditor = function (trackIndex, slotIn
 AbstractTrackBankProxy.prototype.getClipLauncherScenes = function ()
 {
     return this.trackBank.getClipLauncherScenes ();
+};
+
+AbstractTrackBankProxy.prototype.getTrackColorEntry = function (trackIndex)
+{
+    var t = this.getTrack (trackIndex);
+    return AbstractTrackBankProxy.getColorEntry (t.color);
 };
 
 AbstractTrackBankProxy.getColorEntry = function (colorId)
@@ -579,6 +592,7 @@ AbstractTrackBankProxy.prototype.createTracks = function (count)
             monitor: false,
             autoMonitor: false,
             canHoldNotes: false,
+            canHoldAudioData: false,
             sends: [],
             slots: [],
             crossfadeMode: 'AB'
@@ -729,6 +743,11 @@ AbstractTrackBankProxy.prototype.handlePanStr = function (index, text)
 AbstractTrackBankProxy.prototype.handleCanHoldNotes = function (index, canHoldNotes)
 {
     this.tracks[index].canHoldNotes = canHoldNotes;
+};
+
+AbstractTrackBankProxy.prototype.handleCanHoldAudioData = function (index, canHoldAudioData)
+{
+    this.tracks[index].canHoldAudioData = canHoldAudioData;
 };
 
 //--------------------------------------

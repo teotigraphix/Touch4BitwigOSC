@@ -3,7 +3,6 @@
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://C:/Program Files (x86)/Bitwig Studio/resources/doc/control-surface/js-stubs" />
-    <content url="file://$MODULE_DIR$/../Push4Bitwig" />
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>

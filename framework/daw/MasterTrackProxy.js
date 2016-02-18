@@ -1,6 +1,6 @@
 // Written by Jürgen Moßgraber - mossgrabers.de
 //            Michael Schmalle - teotigraphix.com
-// (c) 2014-2015
+// (c) 2014-2016
 // Licensed under LGPLv3 - http://www.gnu.org/licenses/lgpl-3.0.txt
 
 function MasterTrackProxy ()
@@ -53,14 +53,17 @@ MasterTrackProxy.prototype.addTrackSelectionListener = function (listener)
     this.listeners.push (listener);
 };
 
-//--------------------------------------
-// Properties
-//--------------------------------------
-
 MasterTrackProxy.prototype.isSelected = function () { return this.selected; };
 MasterTrackProxy.prototype.getName = function () { return this.name; };
 MasterTrackProxy.prototype.getVU = function () { return this.vu; };
+
+MasterTrackProxy.prototype.getColorEntry = function ()
+{ 
+    return AbstractTrackBankProxy.getColorEntry (this.color);
+};
+
 MasterTrackProxy.prototype.getColor = function () { return this.color; };
+
 MasterTrackProxy.prototype.isMute = function () { return this.mute; };
 MasterTrackProxy.prototype.isSolo = function () { return this.solo; };
 MasterTrackProxy.prototype.getPan = function () { return this.pan; };

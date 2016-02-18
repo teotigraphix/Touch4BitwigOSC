@@ -25,7 +25,7 @@ function OSCModel (scales)
     var numFilterColumns = 6;
     var numFilterColumnEntries = 16;
     var numResults = 16;
-    var hasFlatTrackList = false;
+    var hasFlatTrackList = true;
     var numParams = 8;
     var numDevicesInBank = 8;
     var numDeviceLayers = 8;

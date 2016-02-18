@@ -43,7 +43,7 @@ function init ()
 
     scheduleTask (function ()
     {
-        writer.flush (true);
+        //writer.flush (true);
     }, null, 1000);
 
 	println ("Initialized.");
@@ -56,4 +56,14 @@ function exit ()
 function flush ()
 {
     writer.flush ();
+}
+
+function printObj(obj)
+{
+    println("-------------------------------");
+    for (var name in obj)
+    {
+        println(name + ":" + obj[name]);
+    }
+    println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 }

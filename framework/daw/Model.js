@@ -1,6 +1,6 @@
 // Written by Jürgen Moßgraber - mossgrabers.de
 //            Michael Schmalle - teotigraphix.com
-// (c) 2014-2015
+// (c) 2014-2016
 // Licensed under LGPLv3 - http://www.gnu.org/licenses/lgpl-3.0.txt
 
 function Model (userCCStart,               // The MIDI CC at which the user parameters start
@@ -130,6 +130,17 @@ Model.prototype.getEffectTrackBank = function () { return this.effectTrackBank; 
  * @returns {CursorDeviceProxy}
  */
 Model.prototype.getCursorDevice = function () { return this.cursorDevice; };
+
+
+/**
+ * Get the selected device. If there is none try with the primary device of the current track.
+ * 
+ * @returns {CursorDeviceProxy}
+ */
+Model.prototype.getDevice = function ()
+{
+    return this.hasSelectedDevice () ? this.getCursorDevice () : this.getCurrentTrackBank ().primaryDevice;
+};
 
 /**
  * @returns {UserControlBankProxy}
